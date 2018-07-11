@@ -4,6 +4,10 @@
 #include "Ultrasonic.h"
 //#include <random>
 
+#define FULL_OPEN 120
+#define LITTLE_OPEN 150
+#define CLOSE 180
+
 Ultrasonic ultrasonic2(2);
 Ultrasonic ultrasonic3(3);
 Ultrasonic ultrasonic4(4);
@@ -14,20 +18,27 @@ Servo Motor3;
 Servo Motor4;
 Servo Motor5;
 
-int motorPin = 8;
+int motor3Pin = 8;
 int speakerPin = 6; 
 
-int shaft = 180;
-
+//今モータがどの角度にいるのか
+int motorAngle;
 
 void setup() {
   Serial.begin(9600);
 
-  Motor3.attach(motorPin);     // サーボモータの接続
-  Motor3.write(shaft); 
+  Motor3.attach(motor3Pin);     // サーボモータの接続
+  Motor3.write(CLOSE); 
+  motorAngle = CLOSE;
 }
 
+//起動時からのミリ秒
+unsigned long timer = millis();
+
 void loop() {
+  //プログラムが開始してから現在までのミリ秒
+  timer = millis();
+  
   //距離センサで得た距離（0〜400cm）
   long Range2, Range3, Range4, Range5;
   Range2 = ultrasonic2.MeasureInCentimeters();
@@ -35,8 +46,22 @@ void loop() {
   Range4 = ultrasonic4.MeasureInCentimeters();
   Range5 = ultrasonic5.MeasureInCentimeters();
 
-//  runMotor(Range3, Motor3);
-//  trashThrowed(Range2, Motor3);
+//  changeMotorAngle(Range2, Motor6);
+
+  runMotor(Range3, Motor3);
+  trashThrowed(Range2, Motor3);
+
+//  delay(10);
+}
+
+void changeMotorAngle(int range, Servo motor){
+  if (range < 12) {
+    motor.write(FULL_OPEN);
+    motorAngle = FULL_OPEN;
+  } else {
+    motorAngle = CLOSE;
+    motorAngle = CLOSE;
+  }
 }
 
 //距離センサに近づいたらモータがパカパカしだしてもっと近づいたら開く関数
@@ -50,21 +75,19 @@ void runMotor(int range, Servo motor) {
   } else  if (range < 20 && range >= 12){
     //20cmより近づいたら
     delay(300);
-    motor.write(180);
-    piyo();
+    motor.write(175);
     delay(300);
     motor.write(150);
-    piyo();
   } else {
     //ある程度離れてる段階
-    motor.write(180);
+    motor.write(175);
   }
 }
 
 //ものが捨てられたら何かが起こる関数
 // range:センサと物体の距離 motor:どのモータを動かすか
 void trashThrowed(int range, Servo motor){
-  if(range < 10){
+  if(range < 3){
     //センサから10cm以内のところに反応！→なにか捨てられたとき
     //めっちゃパタパタする
     for (int i = 0; i < 5; i++){
@@ -78,7 +101,6 @@ void trashThrowed(int range, Servo motor){
   }
 }
 
-
 void playTone(int tone, int duration) {
     for (long i = 0; i < duration * 1000L; i += tone * 2) {
         digitalWrite(speakerPin, HIGH);
@@ -89,11 +111,10 @@ void playTone(int tone, int duration) {
 }
 
 void piyo(){
-  playTone(2000, 1);
+  playTone(2000, 10);
   delay(40);
-  playTone(2000, 1);
+  playTone(2000, 10);
   delay(50);
-  playTone(2000, 1);
+  playTone(2000, 10);
   delay(500);
 }
-
